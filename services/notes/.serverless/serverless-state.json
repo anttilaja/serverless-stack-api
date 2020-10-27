@@ -218,7 +218,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/notes-app-api-2/dev/1603808339611-2020-10-27T14:18:59.611Z/create.zip"
+                "S3Key": "serverless/notes-app-api-2/dev/1603809328795-2020-10-27T14:35:28.795Z/create.zip"
               },
               "FunctionName": "notes-app-api-2-dev-create",
               "Handler": "create.main",
@@ -262,7 +262,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/notes-app-api-2/dev/1603808339611-2020-10-27T14:18:59.611Z/get.zip"
+                "S3Key": "serverless/notes-app-api-2/dev/1603809328795-2020-10-27T14:35:28.795Z/get.zip"
               },
               "FunctionName": "notes-app-api-2-dev-get",
               "Handler": "get.main",
@@ -306,7 +306,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/notes-app-api-2/dev/1603808339611-2020-10-27T14:18:59.611Z/list.zip"
+                "S3Key": "serverless/notes-app-api-2/dev/1603809328795-2020-10-27T14:35:28.795Z/list.zip"
               },
               "FunctionName": "notes-app-api-2-dev-list",
               "Handler": "list.main",
@@ -350,7 +350,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/notes-app-api-2/dev/1603808339611-2020-10-27T14:18:59.611Z/update.zip"
+                "S3Key": "serverless/notes-app-api-2/dev/1603809328795-2020-10-27T14:35:28.795Z/update.zip"
               },
               "FunctionName": "notes-app-api-2-dev-update",
               "Handler": "update.main",
@@ -394,7 +394,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/notes-app-api-2/dev/1603808339611-2020-10-27T14:18:59.611Z/delete.zip"
+                "S3Key": "serverless/notes-app-api-2/dev/1603809328795-2020-10-27T14:35:28.795Z/delete.zip"
               },
               "FunctionName": "notes-app-api-2-dev-delete",
               "Handler": "delete.main",
@@ -438,7 +438,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/notes-app-api-2/dev/1603808339611-2020-10-27T14:18:59.611Z/billing.zip"
+                "S3Key": "serverless/notes-app-api-2/dev/1603809328795-2020-10-27T14:35:28.795Z/billing.zip"
               },
               "FunctionName": "notes-app-api-2-dev-billing",
               "Handler": "billing.main",
@@ -922,7 +922,7 @@
               "MethodResponses": []
             }
           },
-          "ApiGatewayDeployment1603808317020": {
+          "ApiGatewayDeployment1603809310023": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
@@ -1161,6 +1161,32 @@
                     "/*/*"
                   ]
                 ]
+              }
+            }
+          },
+          "GatewayResponseDefault4XX": {
+            "Type": "AWS::ApiGateway::GatewayResponse",
+            "Properties": {
+              "ResponseParameters": {
+                "gatewayresponse.header.Access-Control-Allow-Origin": "'*'",
+                "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
+              },
+              "ResponseType": "DEFAULT_4XX",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "GatewayResponseDefault5XX": {
+            "Type": "AWS::ApiGateway::GatewayResponse",
+            "Properties": {
+              "ResponseParameters": {
+                "gatewayresponse.header.Access-Control-Allow-Origin": "'*'",
+                "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
+              },
+              "ResponseType": "DEFAULT_5XX",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
               }
             }
           },
@@ -1622,6 +1648,32 @@
     },
     "resources": {
       "Resources": {
+        "GatewayResponseDefault4XX": {
+          "Type": "AWS::ApiGateway::GatewayResponse",
+          "Properties": {
+            "ResponseParameters": {
+              "gatewayresponse.header.Access-Control-Allow-Origin": "'*'",
+              "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
+            },
+            "ResponseType": "DEFAULT_4XX",
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
+        "GatewayResponseDefault5XX": {
+          "Type": "AWS::ApiGateway::GatewayResponse",
+          "Properties": {
+            "ResponseParameters": {
+              "gatewayresponse.header.Access-Control-Allow-Origin": "'*'",
+              "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
+            },
+            "ResponseType": "DEFAULT_5XX",
+            "RestApiId": {
+              "Ref": "ApiGatewayRestApi"
+            }
+          }
+        },
         "CognitoAuthorizedApiPolicy": {
           "Type": "AWS::IAM::Policy",
           "Properties": {
@@ -1657,7 +1709,7 @@
       "service": "notes-app-api-2",
       "package": {
         "individually": true,
-        "artifactDirectoryName": "serverless/notes-app-api-2/dev/1603808339611-2020-10-27T14:18:59.611Z"
+        "artifactDirectoryName": "serverless/notes-app-api-2/dev/1603809328795-2020-10-27T14:35:28.795Z"
       },
       "plugins": {
         "$ref": "$[\"service\"][\"plugins\"]"
@@ -1700,7 +1752,36 @@
         "$ref": "$[\"service\"][\"functions\"]"
       },
       "resources": [
-        null,
+        {
+          "Resources": {
+            "GatewayResponseDefault4XX": {
+              "Type": "AWS::ApiGateway::GatewayResponse",
+              "Properties": {
+                "ResponseParameters": {
+                  "gatewayresponse.header.Access-Control-Allow-Origin": "'*'",
+                  "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
+                },
+                "ResponseType": "DEFAULT_4XX",
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            },
+            "GatewayResponseDefault5XX": {
+              "Type": "AWS::ApiGateway::GatewayResponse",
+              "Properties": {
+                "ResponseParameters": {
+                  "gatewayresponse.header.Access-Control-Allow-Origin": "'*'",
+                  "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
+                },
+                "ResponseType": "DEFAULT_5XX",
+                "RestApiId": {
+                  "Ref": "ApiGatewayRestApi"
+                }
+              }
+            }
+          }
+        },
         {
           "Resources": {
             "CognitoAuthorizedApiPolicy": {
@@ -1736,7 +1817,7 @@
   },
   "package": {
     "individually": true,
-    "artifactDirectoryName": "serverless/notes-app-api-2/dev/1603808339611-2020-10-27T14:18:59.611Z",
+    "artifactDirectoryName": "serverless/notes-app-api-2/dev/1603809328795-2020-10-27T14:35:28.795Z",
     "artifact": ""
   }
 }

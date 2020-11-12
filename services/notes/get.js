@@ -9,10 +9,10 @@ export const main = handler(async (event, context) => {
     // - 'noteId': path parameter
     Key: {
       userId: event.requestContext.identity.cognitoIdentityId,
-      noteId: event.pathParameters.id
+      // noteId: event.pathParameters.id
     }
   };
-  console.log("params: "+JSON.stringify(params));
+
   const result = await dynamoDb.get(params);
   if ( ! result.Item) {
     throw new Error("Item not found.");
@@ -21,4 +21,3 @@ export const main = handler(async (event, context) => {
   // Return the retrieved item
   return result.Item;
 });
-

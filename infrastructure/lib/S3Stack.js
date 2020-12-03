@@ -13,7 +13,7 @@ export default class S3Stack extends sst.Stack {
       // Allow client side access to the bucket from a different domain
       cors: [
         {
-          maxAge: 3000,
+          maxAge: 4000,
           allowedOrigins: ["*"],
           allowedHeaders: ["*"],
           allowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"],

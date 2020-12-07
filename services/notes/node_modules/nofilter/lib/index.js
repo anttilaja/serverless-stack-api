@@ -11,29 +11,6 @@ const util = require('util')
  * Allows passing in source data (input, inputEncoding) at creation
  * time.  Source data can also be passed in the options object.
  *
- * @param {string|Buffer} [input] - Source data
- * @param {string} [inputEncoding=null] - Encoding name for input,
- *   ignored if input is not a String
- * @param {Object} [options={}] - Other options
- * @param {string|Buffer} [options.input=null] - Input source data
- * @param {string} [options.inputEncoding=null] - Encoding name for input,
- *   ignored if input is not a String
- * @param {number} [options.highWaterMark=16kb] - The maximum number of bytes
- *   to store in the internal buffer before ceasing to read from the
- *   underlying resource. Default=16kb, or 16 for objectMode streams
- * @param {string} [options.encoding=null] - If specified, then buffers will be
- *   decoded to strings using the specified encoding
- * @param {boolean} [options.objectMode=false] - Whether this stream should
- *   behave as a stream of objects. Meaning that stream.read(n) returns a
- *   single value instead of a Buffer of size n
- * @param {boolean} [options.decodeStrings=true] - Whether or not to decode
- *   strings into Buffers before passing them to _write()
- * @param {boolean} [options.watchPipe=true] - Whether to watch for 'pipe'
- *   events, setting this stream's objectMode based on the objectMode of the
- *   input stream
- * @param {boolean} [options.readError=false] - If true, when a read() 
- *   underflows, throw an error.
- *
  * @example <caption>source</caption>
  * const n = new NoFilter('Zm9v', 'base64');
  * n.pipe(process.stdout);
@@ -43,9 +20,34 @@ const util = require('util')
  * // NOTE: 'finish' fires when the input is done writing
  * n.on('finish', function() { console.log(n.toString('base64')); });
  * process.stdin.pipe(n);
- *
  */
 class NoFilter extends stream.Transform {
+  /**
+   * Create an instance of NoFilter.
+   *
+   * @param {string|Buffer} [input] - Source data
+   * @param {string} [inputEncoding=null] - Encoding name for input,
+   *   ignored if input is not a String
+   * @param {Object} [options={}] - Other options
+   * @param {string|Buffer} [options.input=null] - Input source data
+   * @param {string} [options.inputEncoding=null] - Encoding name for input,
+   *   ignored if input is not a String
+   * @param {number} [options.highWaterMark=16384] - The maximum number of bytes
+   *   to store in the internal buffer before ceasing to read from the
+   *   underlying resource. Default=16kb, or 16 for objectMode streams
+   * @param {string} [options.encoding=null] - If specified, then buffers will
+   *   be decoded to strings using the specified encoding
+   * @param {boolean} [options.objectMode=false] - Whether this stream should
+   *   behave as a stream of objects. Meaning that stream.read(n) returns a
+   *   single value instead of a Buffer of size n
+   * @param {boolean} [options.decodeStrings=true] - Whether or not to decode
+   *   strings into Buffers before passing them to _write()
+   * @param {boolean} [options.watchPipe=true] - Whether to watch for 'pipe'
+   *   events, setting this stream's objectMode based on the objectMode of the
+   *   input stream
+   * @param {boolean} [options.readError=false] - If true, when a read()
+   *   underflows, throw an error.
+   */
   constructor(input, inputEncoding, options) {
     if (options == null) {
       options = {}
@@ -129,7 +131,7 @@ class NoFilter extends stream.Transform {
    *
    * @example
    * const arr = [new NoFilter('1234'), new NoFilter('0123')];
-   * arr.sort(Buffer.compare);
+   * arr.sort(NoFilter.compare);
    */
   static compare(nf1, nf2) {
     if (!(nf1 instanceof this)) {
@@ -149,18 +151,20 @@ class NoFilter extends stream.Transform {
    *
    * If length is not provided, it is read from the buffers in the
    * list. However, this adds an additional loop to the function, so
-   * it is faster to provide the length explicitly.
+   * it is faster to provide the length explicitly if you already know it.
    *
-   * @param {Array<NoFilter>} list Inputs.  Must not be in object mode.
+   * @param {Array<NoFilter>} list Inputs.  Must not be all either in object
+   *   mode, or all not in object mode.
    * @param {number} [length=null] Number of bytes or objects to read
-   * @returns {Buffer} The concatenated values
+   * @returns {Buffer|Array} The concatenated values as an array if in object
+   *   mode, otherwise a Buffer
    */
   static concat(list, length) {
     if (!Array.isArray(list)) {
       throw new TypeError('list argument must be an Array of NoFilters')
     }
     if ((list.length === 0) || (length === 0)) {
-      return new Buffer.alloc(0)
+      return Buffer.alloc(0)
     }
     if ((length == null)) {
       length = list.reduce((tot, nf) => {
@@ -170,17 +174,29 @@ class NoFilter extends stream.Transform {
         return tot + nf.length
       }, 0)
     }
-    const bufs = list.map((nf) => {
+    let allBufs = true
+    let allObjs = true
+    const bufs = list.map(nf => {
       if (!(nf instanceof NoFilter)) {
         throw new TypeError('list argument must be an Array of NoFilters')
       }
-      if (nf._readableState.objectMode) {
-        // TODO: if any of them are in object mode, then return an array?
-        throw new Error('NoFilter may not be in object mode for concat')
+      const buf = nf.slice()
+      if (Buffer.isBuffer(buf)) {
+        allObjs = false
+      } else {
+        allBufs = false
       }
-      return nf.slice()
+      return buf
     })
-    return Buffer.concat(bufs, length)
+    if (allBufs) {
+      return Buffer.concat(bufs, length)
+    }
+    if (allObjs) {
+      return [].concat(...bufs).slice(0, length)
+    }
+    // TODO: maybe coalesce buffers, counting bytes, and flatten in arrays
+    // counting objects?  I can't imagine why that would be useful.
+    throw new Error('Concatenating mixed object and byte streams not supported')
   }
 
   /**
@@ -255,7 +271,7 @@ class NoFilter extends stream.Transform {
    *
    * @param {function} [cb=null] - finished/error callback used in *addition*
    *   to the promise
-   * @returns {Promise<Buffer>} fulfilled when complete
+   * @returns {Promise<Buffer|String>} fulfilled when complete
    */
   promise(cb) {
     let done = false
@@ -289,13 +305,16 @@ class NoFilter extends stream.Transform {
     if (!(other instanceof NoFilter)) {
       throw new TypeError('Arguments must be NoFilters')
     }
-    if (this._readableState.objectMode || other._readableState.objectMode) {
-      throw new Error('Must not be in object mode to compare')
-    }
     if (this === other) {
       return 0
     } else {
-      return this.slice().compare(other.slice())
+      const buf1 = this.slice()
+      const buf2 = other.slice()
+      // these will both be buffers because of the check above.
+      if (Buffer.isBuffer(buf1) && Buffer.isBuffer(buf2)) {
+        return buf1.compare(buf2)
+      }
+      throw new Error('Cannot compare streams in object mode')
     }
   }
 
@@ -318,7 +337,7 @@ class NoFilter extends stream.Transform {
    *
    * @param {Number} [start=0] - beginning offset
    * @param {Number} [end=length] - ending offset
-   * @returns {Buffer|Array} if in object mode, an array of objects.  Otherwize,
+   * @returns {Buffer|Array} if in object mode, an array of objects.  Otherwise,
    *   concatenated array of contents.
    */
   slice(start, end) {
@@ -378,14 +397,18 @@ class NoFilter extends stream.Transform {
    * @returns {String}
    */
   toString(encoding, start, end) {
+    const buf = this.slice(start, end)
+    if (!Buffer.isBuffer(buf)) {
+      return JSON.stringify(buf)
+    }
     if ((!encoding || (encoding === 'utf8')) && util.TextDecoder) {
       const td = new util.TextDecoder('utf8', {
-        fatal: true, 
+        fatal: true,
         ignoreBOM: true
       })
-      return td.decode(this.slice(start, end))
+      return td.decode(buf)
     }
-    return this.slice().toString(encoding, start, end)
+    return buf.toString(encoding, start, end)
   }
 
   /**
@@ -488,6 +511,8 @@ class NoFilter extends stream.Transform {
 }
 
 /**
+ * @param {string} meth - method to call
+ * @param {number} len - number of bytes to write
  * @private
  */
 function _read_gen(meth, len) {
@@ -501,6 +526,8 @@ function _read_gen(meth, len) {
 }
 
 /**
+ * @param {string} meth - method to call
+ * @param {number} len - number of bytes to write
  * @private
  */
 function _write_gen(meth, len) {

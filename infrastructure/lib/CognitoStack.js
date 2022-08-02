@@ -1,8 +1,15 @@
-import { CfnOutput } from "@aws-cdk/core";
-import * as iam from "@aws-cdk/aws-iam";
-import * as cognito from "@aws-cdk/aws-cognito";
+
+import { Construct } from 'constructs';
+import { App, Stack} from 'aws-cdk-lib';  
+              // core constructs
+import { aws_cognito as cognito, aws_iam as iam} from 'aws-cdk-lib';               // stable module
+import * as codestar from '@aws-cdk/aws-codestar-alpha'; 
 import * as sst from "@serverless-stack/resources";
-import CognitoAuthRole from "./CognitoAuthRole";
+import * as cdk from "aws-cdk-lib";
+import CognitoAuthRole from "./CognitoAuthRole"; // experimental moduleimport { Construct } from 'constructs';import { Construct } from 'constructs';
+
+
+
 
 export default class CognitoStack extends sst.Stack {
   constructor(scope, id, props) {
@@ -49,16 +56,16 @@ export default class CognitoStack extends sst.Stack {
     );
 
     // Export values
-    new CfnOutput(this, "UserPoolId", {
+    new cdk.CfnOutput(this, "UserPoolId", {
       value: userPool.userPoolId,
     });
-    new CfnOutput(this, "UserPoolClientId", {
+    new cdk.CfnOutput(this, "UserPoolClientId", {
       value: userPoolClient.userPoolClientId,
     });
-    new CfnOutput(this, "IdentityPoolId", {
+    new cdk.CfnOutput(this, "IdentityPoolId", {
       value: identityPool.ref,
     });
-    new CfnOutput(this, "AuthenticatedRoleName", {
+    new cdk.CfnOutput(this, "AuthenticatedRoleName", {
       value: authenticatedRole.role.roleName,
       exportName: app.logicalPrefixedName("CognitoAuthRole"),
     });

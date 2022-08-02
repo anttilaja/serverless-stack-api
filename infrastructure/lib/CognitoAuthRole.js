@@ -1,8 +1,12 @@
-import * as cdk from "@aws-cdk/core";
-import * as iam from "@aws-cdk/aws-iam";
-import * as cognito from "@aws-cdk/aws-cognito";
+import { Construct } from 'constructs';
+import { App, Stack} from 'aws-cdk-lib';     
+import * as cdk from "aws-cdk-lib";              // core constructs
+import { aws_cognito  as cognito, aws_iam as iam} from 'aws-cdk-lib';               // stable module
+import * as codestar from '@aws-cdk/aws-codestar-alpha'; 
+import * as sst from "@serverless-stack/resources";
 
-export default class CognitoAuthRole extends cdk.Construct {
+
+export default class CognitoAuthRole extends Construct {
   // Public reference to the IAM role
   role;
 

@@ -21,8 +21,7 @@ export default class S3Stack extends sst.Stack {
           maxAge: 3000,
           allowedOrigins: ["*"],
           allowedHeaders: ["*"],
-          allowedMethods: ["*"]
-          /*allowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"],*/
+          allowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"]
         },
       ],
     });

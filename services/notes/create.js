@@ -21,6 +21,7 @@ export function main(event, context, callback) {
       userId: event.requestContext.identity.cognitoIdentityId,
       noteId: uuid.v1(),
       content: data.content,
+      subject: data.subject,
       attachment: data.attachment,
       createdAt: Date.now()
     }

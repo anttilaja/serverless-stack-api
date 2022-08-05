@@ -13,6 +13,13 @@ export const main = handler(async (event, context) => {
     }
   };
 
+  const result = await dynamoDb.get(params);
+  if ( ! result.Item) {
+    throw new Error("Item not found.");
+  }
+  // Return the retrieved item
+  return result.Item;
+/*
   //var result = null; //await dynamoDb.get(params);
   await dynamoDb.get(params, (value) => {
     console.log("value for returning: "+JSON.stringify(value));
@@ -22,6 +29,5 @@ export const main = handler(async (event, context) => {
       }
       // Return the retrieved item
       return result.Item;
-  });
-
+  });*/
 });

@@ -16,7 +16,7 @@ export const main = handler(async (event, context) => {
   const result = null; //await dynamoDb.get(params);
 
 
-  await dynamoDb.get(params, (value) =>{
+  await dynamoDb.get(params, (value) => {
       result=value;
   });
 

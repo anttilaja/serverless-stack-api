@@ -4,14 +4,20 @@ var allowlist = {
         25,
         85,
         86,
-        201,
-        255,
-        256
+        207,
+        261,
+        262
     ],
     '/credentials/cognito_identity_credentials.js': [
         78,
         79,
         109
+    ],
+    '/credentials/shared_ini_file_credentials.js': [
+        4,
+    ],
+    '/credentials/sso_credentials.js': [
+        15,
     ],
     '/http.js': [
         5
@@ -24,23 +30,27 @@ var allowlist = {
         110,
         112
     ],
+    '/region/utils.js': [
+        10
+    ],
     '/request.js': [
+        318,
         319
     ],
     '/services/s3.js': [
-        70,
-        71,
-        362,
-        364,
-        377,
-        383,
-        767,
-        769,
-        888,
-        899,
-        900,
-        901,
-        906
+        87,
+        88,
+        260,
+        262,
+        275,
+        281,
+        641,
+        643,
+        762,
+        773,
+        774,
+        775,
+        780,
     ]
 };
 

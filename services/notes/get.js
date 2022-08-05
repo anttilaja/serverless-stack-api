@@ -13,18 +13,15 @@ export const main = handler(async (event, context) => {
     }
   };
 
-  const result = null; //await dynamoDb.get(params);
-
-
+  //var result = null; //await dynamoDb.get(params);
   await dynamoDb.get(params, (value) => {
-      result=value;
+      const result=value;
+      if ( ! result.Item) {
+        throw new Error("Item not found.");
+      }
+    
+      // Return the retrieved item
+      return result.Item;
   });
 
-
-  if ( ! result.Item) {
-    throw new Error("Item not found.");
-  }
-
-  // Return the retrieved item
-  return result.Item;
 });

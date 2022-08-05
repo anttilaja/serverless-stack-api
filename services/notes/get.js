@@ -13,7 +13,14 @@ export const main = handler(async (event, context) => {
     }
   };
 
-  const result = await dynamoDb.get(params);
+  const result = null; //await dynamoDb.get(params);
+
+
+  await dynamoDb.get(params, (value) =>{
+      result=value;
+  });
+
+
   if ( ! result.Item) {
     throw new Error("Item not found.");
   }

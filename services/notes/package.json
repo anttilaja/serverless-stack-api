@@ -23,6 +23,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "serverless": "^3.35.2",
     "stripe": "^13.6.0",
     "uuid": "^9.0.1"
   }

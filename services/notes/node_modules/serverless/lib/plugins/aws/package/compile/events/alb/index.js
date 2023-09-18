@@ -7,9 +7,19 @@ const compileTargetGroups = require('./lib/target-groups');
 const compileListenerRules = require('./lib/listener-rules');
 const compilePermissions = require('./lib/permissions');
 
-function defineArray(schema) {
-  return { type: 'array', items: schema };
+function defineArray(schema, options = {}) {
+  return { type: 'array', items: schema, ...options };
 }
+
+const ALB_HTTP_HEADER_SCHEMA = {
+  type: 'object',
+  properties: {
+    name: { type: 'string', maxLength: 40 },
+    values: defineArray({ type: 'string', maxLength: 128 }, { uniqueItems: true }),
+  },
+  additionalProperties: false,
+  required: ['name', 'values'],
+};
 
 class AwsCompileAlbEvents {
   constructor(serverless, options) {
@@ -39,26 +49,13 @@ class AwsCompileAlbEvents {
         conditions: {
           type: 'object',
           properties: {
-            header: {
-              type: 'object',
-              properties: {
-                name: { type: 'string', maxLength: 40 },
-                values: { type: 'array', items: { type: 'string', maxLength: 128 } },
-              },
-              additionalProperties: false,
-              required: ['name', 'values'],
-            },
+            header: { anyOf: [defineArray(ALB_HTTP_HEADER_SCHEMA), ALB_HTTP_HEADER_SCHEMA] },
             host: defineArray({
               type: 'string',
               pattern: '^[A-Za-z0-9*?.-]+$',
               maxLength: 128,
             }),
-            ip: defineArray({
-              anyOf: [
-                { type: 'string', format: 'ipv4' },
-                { type: 'string', format: 'ipv6' },
-              ],
-            }),
+            ip: defineArray({ type: 'string' }, { uniqueItems: true }),
             method: defineArray({ type: 'string', pattern: '^[A-Z_-]+$', maxLength: 40 }),
             path: defineArray({
               type: 'string',

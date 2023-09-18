@@ -1,12 +1,15 @@
 'use strict';
 
+const resolveLambdaTarget = require('../../../utils/resolve-lambda-target');
+const _ = require('lodash');
+
 class AwsCompileActiveMQEvents {
   constructor(serverless) {
     this.serverless = serverless;
     this.provider = this.serverless.getProvider('aws');
 
     this.hooks = {
-      'package:compileEvents': this.compileActiveMQEvents.bind(this),
+      'package:compileEvents': async () => this.compileActiveMQEvents(),
     };
 
     this.serverless.configSchemaHandler.defineFunctionEvent('aws', 'activemq', {
@@ -45,6 +48,7 @@ class AwsCompileActiveMQEvents {
         queue: {
           type: 'string',
         },
+        filterPatterns: { $ref: '#/definitions/filterPatterns' },
       },
       additionalProperties: false,
       required: ['basicAuthArn', 'arn', 'queue'],
@@ -91,23 +95,31 @@ class AwsCompileActiveMQEvents {
         if (!event.activemq) return;
 
         hasMQEvent = true;
-        const { basicAuthArn, arn, batchSize, maximumBatchingWindow, enabled, queue } =
-          event.activemq;
+        const {
+          basicAuthArn,
+          arn,
+          batchSize,
+          maximumBatchingWindow,
+          enabled,
+          queue,
+          filterPatterns,
+        } = event.activemq;
 
         const mqEventLogicalId = this.provider.naming.getActiveMQEventLogicalId(
           functionName,
           queue
         );
-        const lambdaLogicalId = this.provider.naming.getLambdaLogicalId(functionName);
-        const dependsOn = this.provider.resolveFunctionIamRoleResourceName(functionObj) || [];
+
+        const dependsOn = [
+          this.provider.resolveFunctionIamRoleResourceName(functionObj),
+          _.get(functionObj.targetAlias, 'logicalId'),
+        ].filter(Boolean);
 
         const mqResource = {
           Type: 'AWS::Lambda::EventSourceMapping',
           DependsOn: dependsOn,
           Properties: {
-            FunctionName: {
-              'Fn::GetAtt': [lambdaLogicalId, 'Arn'],
-            },
+            FunctionName: resolveLambdaTarget(functionName, functionObj),
             EventSourceArn: arn,
             Queues: [queue],
             SourceAccessConfigurations: [
@@ -129,6 +141,14 @@ class AwsCompileActiveMQEvents {
 
         if (enabled != null) {
           mqResource.Properties.Enabled = enabled;
+        }
+
+        if (filterPatterns) {
+          mqResource.Properties.FilterCriteria = {
+            Filters: filterPatterns.map((pattern) => ({
+              Pattern: JSON.stringify(pattern),
+            })),
+          };
         }
 
         brokerStatement.Resource.push(arn);

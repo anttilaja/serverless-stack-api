@@ -1,12 +1,15 @@
 'use strict';
 
+const _ = require('lodash');
+const resolveLambdaTarget = require('../../../utils/resolve-lambda-target');
+
 class AwsCompileRabbitMQEvents {
   constructor(serverless) {
     this.serverless = serverless;
     this.provider = this.serverless.getProvider('aws');
 
     this.hooks = {
-      'package:compileEvents': this.compileRabbitMQEvents.bind(this),
+      'package:compileEvents': async () => this.compileRabbitMQEvents(),
     };
 
     this.serverless.configSchemaHandler.defineFunctionEvent('aws', 'rabbitmq', {
@@ -48,6 +51,7 @@ class AwsCompileRabbitMQEvents {
         virtualHost: {
           type: 'string',
         },
+        filterPatterns: { $ref: '#/definitions/filterPatterns' },
       },
       additionalProperties: false,
       required: ['basicAuthArn', 'arn', 'queue'],
@@ -94,15 +98,25 @@ class AwsCompileRabbitMQEvents {
         if (!event.rabbitmq) return;
 
         hasMQEvent = true;
-        const { basicAuthArn, arn, batchSize, maximumBatchingWindow, enabled, queue, virtualHost } =
-          event.rabbitmq;
+        const {
+          basicAuthArn,
+          arn,
+          batchSize,
+          maximumBatchingWindow,
+          enabled,
+          queue,
+          virtualHost,
+          filterPatterns,
+        } = event.rabbitmq;
 
         const mqEventLogicalId = this.provider.naming.getRabbitMQEventLogicalId(
           functionName,
           queue
         );
-        const lambdaLogicalId = this.provider.naming.getLambdaLogicalId(functionName);
-        const dependsOn = this.provider.resolveFunctionIamRoleResourceName(functionObj) || [];
+        const dependsOn = [
+          this.provider.resolveFunctionIamRoleResourceName(functionObj),
+          _.get(functionObj.targetAlias, 'logicalId'),
+        ].filter(Boolean);
 
         const sourceAccessConfigurations = [
           {
@@ -122,9 +136,7 @@ class AwsCompileRabbitMQEvents {
           Type: 'AWS::Lambda::EventSourceMapping',
           DependsOn: dependsOn,
           Properties: {
-            FunctionName: {
-              'Fn::GetAtt': [lambdaLogicalId, 'Arn'],
-            },
+            FunctionName: resolveLambdaTarget(functionName, functionObj),
             EventSourceArn: arn,
             Queues: [queue],
             SourceAccessConfigurations: sourceAccessConfigurations,
@@ -141,6 +153,14 @@ class AwsCompileRabbitMQEvents {
 
         if (enabled != null) {
           mqResource.Properties.Enabled = enabled;
+        }
+
+        if (filterPatterns) {
+          mqResource.Properties.FilterCriteria = {
+            Filters: filterPatterns.map((pattern) => ({
+              Pattern: JSON.stringify(pattern),
+            })),
+          };
         }
 
         brokerStatement.Resource.push(arn);

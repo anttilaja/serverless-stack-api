@@ -21,6 +21,10 @@ In order to configure lambda to trigger via `kafka` events, you must provide thr
 - `topic` to consume messages from
 - `bootstrapServers` - an array of bootstrap server addresses for your Kafka cluster
 
+Optionally, you can provide the following properties:
+
+- `consumerGroupId` - the consumer group id to use for consuming messages
+
 ## Authentication
 
 You must authenticate your Lambda with a self-managed Apache Kafka cluster using one of;
@@ -72,6 +76,7 @@ functions:
           accessConfigurations:
             saslScram512Auth: arn:aws:secretsmanager:us-east-1:01234567890:secret:MyBrokerSecretName
           topic: MySelfManagedKafkaTopic
+          consumerGroupId: MyConsumerGroupId
           bootstrapServers:
             - abc3.xyz.com:9092
             - abc2.xyz.com:9092
@@ -91,6 +96,7 @@ functions:
             clientCertificateTlsAuth: arn:aws:secretsmanager:us-east-1:01234567890:secret:ClientCertificateTLS
             serverRootCaCertificate: arn:aws:secretsmanager:us-east-1:01234567890:secret:ServerRootCaCertificate
           topic: MySelfManagedMTLSKafkaTopic
+          consumerGroupId: MyConsumerGroupId
           bootstrapServers:
             - abc3.xyz.com:9092
             - abc2.xyz.com:9092
@@ -138,6 +144,28 @@ functions:
           enabled: false
 ```
 
+## Setting filter patterns
+
+This configuration allows to filter events before they are passed to a Lambda function for processing. By default, it accepts up to 5 filter criteria, but this can be increased to a maximum of 10 with a quota extension. If an event matches at least one of the specified filter patterns, the Lambda function will process it. For more information, see the [AWS Event Filtering](https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html).
+
+The following example demonstrates using this property to only process records that are published in the Kafka cluster where field `eventName` is equal to `INSERT`.
+
+```yml
+functions:
+  compute:
+    handler: handler.compute
+    events:
+      - kafka:
+          accessConfigurations:
+            saslScram512Auth: arn:aws:secretsmanager:us-east-1:01234567890:secret:MyBrokerSecretName
+          topic: MySelfManagedKafkaTopic
+          bootstrapServers:
+            - abc3.xyz.com:9092
+            - abc2.xyz.com:9092
+          filterPatterns:
+            - eventName: INSERT
+```
+
 ## IAM Permissions
 
 The Serverless Framework will automatically configure the most minimal set of IAM permissions for you. However you can still add additional permissions if you need to. Read the official [AWS documentation](https://docs.aws.amazon.com/lambda/latest/dg/kafka-smaa.html) for more information about IAM Permissions for Kafka events.
@@ -146,7 +174,8 @@ The Serverless Framework will automatically configure the most minimal set of IA
 
 You can set the `batchSize`, which effects how many messages can be processed in a single Lambda invocation. The default `batchSize` is 100, and the max `batchSize` is 10000.
 Likewise `maximumBatchingWindow` can be set to determine the amount of time the Lambda spends gathering records before invoking the function. The default is 0, but **if you set `batchSize` to more than 10, you must set `maximumBatchingWindow` to at least 1**. The maximum is 300.
-In addition, you can also configure `startingPosition`, which controls the position at which Lambda should start consuming messages from the topic. It supports two possible values, `TRIM_HORIZON` and `LATEST`, with `TRIM_HORIZON` being the default.
+In addition, you can also configure `startingPosition`, which controls the position at which Lambda should start consuming messages from the topic. It supports three possible values, `TRIM_HORIZON`, `LATEST` and `AT_TIMESTAMP`, with `TRIM_HORIZON` being the default.
+When `startingPosition` is configured as `AT_TIMESTAMP`, `startingPositionTimestamp` is also mandatory.
 
 In the following example, we specify that the `compute` function should have a `kafka` event configured with `batchSize` of 1000, `maximumBatchingWindow` of 30 seconds and `startingPosition` equal to `LATEST`.
 

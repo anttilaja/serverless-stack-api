@@ -4,6 +4,7 @@ const _ = require('lodash');
 const { addCustomResourceToService } = require('../../../../custom-resources');
 const ServerlessError = require('../../../../../../serverless-error');
 const { makeAndHashRuleName, makeEventBusTargetId, makeRuleName } = require('./utils');
+const resolveLambdaTarget = require('../../../../utils/resolve-lambda-target');
 
 class AwsCompileEventBridgeEvents {
   constructor(serverless, options) {
@@ -47,7 +48,7 @@ class AwsCompileEventBridgeEvents {
           );
         }
       },
-      'package:compileEvents': this.compileEventBridgeEvents.bind(this),
+      'package:compileEvents': async () => this.compileEventBridgeEvents(),
     };
 
     this.serverless.configSchemaHandler.defineFunctionEvent('aws', 'eventBridge', {
@@ -79,6 +80,8 @@ class AwsCompileEventBridgeEvents {
           ],
         },
         schedule: { pattern: '^(?:cron|rate)\\(.+\\)$', type: 'string' },
+        name: { type: 'string', pattern: '[a-zA-Z0-9-_.]+', minLength: 1, maxLength: 64 },
+        description: { type: 'string', maxLength: 512 },
         enabled: { type: 'boolean' },
         pattern: {
           type: 'object',
@@ -92,6 +95,7 @@ class AwsCompileEventBridgeEvents {
             'region': {},
             'resources': {},
             'detail': {},
+            '$or': { type: 'array' },
           },
           additionalProperties: false,
         },
@@ -149,19 +153,23 @@ class AwsCompileEventBridgeEvents {
           if (event.eventBridge) {
             idx++;
             anyFuncUsesEventBridge = true;
+            const Description = event.eventBridge.description;
             const EventBus = event.eventBridge.eventBus;
             const Schedule = event.eventBridge.schedule;
             const Pattern = event.eventBridge.pattern;
             const Input = event.eventBridge.input;
             const InputPath = event.eventBridge.inputPath;
+            let RuleName = event.eventBridge.name;
             let InputTransformer = event.eventBridge.inputTransformer;
             let RetryPolicy = event.eventBridge.retryPolicy;
             let DeadLetterConfig;
 
-            const RuleName = makeAndHashRuleName({
-              functionName: FunctionName,
-              index: idx,
-            });
+            if (!RuleName) {
+              RuleName = makeAndHashRuleName({
+                functionName: FunctionName,
+                index: idx,
+              });
+            }
 
             let State = 'ENABLED';
             if (event.eventBridge.enabled === false) {
@@ -237,6 +245,7 @@ class AwsCompileEventBridgeEvents {
             } else {
               this.compileWithCloudFormation({
                 eventBusName,
+                Description,
                 EventBus,
                 compiledCloudFormationTemplate,
                 functionName,
@@ -355,6 +364,7 @@ class AwsCompileEventBridgeEvents {
 
   compileWithCloudFormation({
     eventBusName: _eventBusName,
+    Description,
     EventBus,
     compiledCloudFormationTemplate,
     functionName,
@@ -400,10 +410,9 @@ class AwsCompileEventBridgeEvents {
       ] = eventBusResource;
     }
 
+    const functionObj = this.serverless.service.getFunction(functionName);
     const targetBase = {
-      Arn: {
-        'Fn::GetAtt': [this.provider.naming.getLambdaLogicalId(functionName), 'Arn'],
-      },
+      Arn: resolveLambdaTarget(functionName, functionObj),
       Id: makeEventBusTargetId(RuleName),
     };
 
@@ -419,7 +428,9 @@ class AwsCompileEventBridgeEvents {
     // Create a rule
     const eventRuleResource = {
       Type: 'AWS::Events::Rule',
+      DependsOn: _.get(functionObj.targetAlias, 'logicalId'),
       Properties: {
+        Description,
         // default event bus is used when EventBusName is not set
         EventBusName: eventBusName === 'default' ? undefined : eventBusName,
         EventPattern: Pattern,
@@ -447,11 +458,10 @@ class AwsCompileEventBridgeEvents {
     const ruleNameArnPath = eventBusName ? [eventBusName, RuleName] : [RuleName];
     const lambdaPermissionResource = {
       Type: 'AWS::Lambda::Permission',
+      DependsOn: _.get(functionObj.targetAlias, 'logicalId'),
       Properties: {
         Action: 'lambda:InvokeFunction',
-        FunctionName: {
-          Ref: this.provider.naming.getLambdaLogicalId(functionName),
-        },
+        FunctionName: resolveLambdaTarget(functionName, functionObj),
         Principal: 'events.amazonaws.com',
         SourceArn: {
           'Fn::Join': [

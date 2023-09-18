@@ -58,7 +58,7 @@ The dashboard is free for single developer use and we will be using it for the p
 
 For all these reasons, lets choose Y (or just press Enter), to get ourselves set up with the dashboard. This will then open a window in your browser.
 
-Let's click the “Register” link near the bottom to create our account, either using GiHub, Google or your own email address and password. Clicking register, when prompted for a username, go ahead and use a unique username that contains only numbers and lowercase letters.
+Let's click the “Register” link near the bottom to create our account, either using GitHub, Google or your own email address and password. Clicking register, when prompted for a username, go ahead and use a unique username that contains only numbers and lowercase letters.
 
 Once the account is created, the CLI will then do one of two things:
 
@@ -93,7 +93,7 @@ Of course, if you don’t want to set-up a provider on a dashboard account, you 
 
 ## What have we just done?
 
-After a successful deployment you should see, either in the dashboard or on the CLI, that you have an HTTP endpoint you can call. Also, if you open the service we just created in your favourite IDE or text editor and look at the contents of the `serverless.yml`, this is what controls pretty much everything in our service. You will notice a section where the functions you have are defined with events attached to them. Also take note that the code that executes when this HTTP endpoint is called is defined in the `handler.js` file in a function called `hello`. If you edit this file then run `serverless deploy` your changes will be pushed to your AWS account and when you next call that endpoint either in the browser or using curl, you should see your changes reflected:
+After a successful deployment you should see, either in the dashboard or on the CLI, that you have an HTTP endpoint you can call. Also, if you open the service we just created in your favourite IDE or text editor and look at the contents of the `serverless.yml`, this is what controls pretty much everything in our service. You will notice a section where the functions you have are defined with events attached to them. Also take note that the code that executes when this HTTP endpoint is called is defined in the `index.js` file. If you edit this file then run `serverless deploy` your changes will be pushed to your AWS account and when you next call that endpoint either in the browser or using curl, you should see your changes reflected:
 
 ```bash
 curl [your endpoint address]
@@ -150,7 +150,7 @@ module.exports.createCustomer = async (event) => {
 You may have noticed we include an npm module to help us talk to AWS, so lets make sure we install this required npm module as a part of our service with the following command:
 
 ```bash
-npm install --save-dev aws-sdk
+npm install aws-sdk
 ```
 
 Note: If you would like this entire project as a reference to clone, you can find this on [GitHub](https://github.com/serverless/tutorial/tree/main/getting-started) but just remember to add your own org and app names to `serverless.yml` to connect to your Serverless Dashboard account before deploying.
@@ -227,7 +227,7 @@ getCustomers:
   handler: getCustomers.getCustomers
   events:
     - httpApi:
-        path: /
+        path: /customers
         method: get
 ```
 
@@ -273,7 +273,7 @@ You may have noticed that in our final version of the project, we removed the de
 After a `serverless deploy` we now have our brand new endpoint. And if we run a curl command against it we should get the item we inserted previously:
 
 ```bash
-curl –url [insert url here]
+curl –-url [insert url here]/customers
 ```
 
 ## Final thoughts
